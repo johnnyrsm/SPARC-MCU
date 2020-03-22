@@ -2,11 +2,34 @@
  * Verilog module for 32-Bit ALU based on SPARC Architecture.
  * Written by Johnny Sanchez - Github username:johnnyrsm
  */
-module ALU(output reg [31:0] Out, output reg C, N, V, Z, input [31:0] A, B, input [5:0] OpCode, input Cin);
+
+
+//*************************************
+//	Instruction Format
+//*************************************
+
+/*
+	Bits		Value
+*	31-30 		op
+*	29-25 		rd
+*	24-19 		op3
+*	18-14 		rs1
+*	13 		0
+*	12-5 		00000000
+*	4-0 		rs2
+
+	Bits		Value
+*	31-30 		op
+*	29-25 		rd
+*	24-19 		op3
+*	18-14 		rs1
+*	13 		1
+*	12-0 		simm13
+
+*/
 
 //*************************************
 //	OpCode definitions
-//	for each Instruction
 //*************************************
 
 //*************************************
@@ -14,57 +37,59 @@ module ALU(output reg [31:0] Out, output reg C, N, V, Z, input [31:0] A, B, inpu
 //	Instructions
 //*************************************
 
-parameter [5:0] ADD = 6'b000000,
-		ADDCC = 6'b010000,
-		ADDX = 6'b001000,	
-		ADDXCC = 6'b011000,
-		SUB = 6'b000100,
-		SUBCC = 6'b010100,
-		SUBX = 6'b001100,
-		SUBXCC = 6'b011100,
+`define ADD 			6'b000000		//rd <=	rs1 + (rs2 or simm13)
+`define ADDCC 			6'b010000		//rd <=	rs1 + (rs2 or simm13), modify icc
+`define ADDX 			6'b001000		//rd <=	rs1 + (rs2 or simm13) + Carry
+`define ADDXCC 			6'b011000		//rd <=	rs1 + (rs2 or simm13) + Carry, modify	icc
+`define SUB 			6'b000100		//rd <=	rs1 - (rs2 or simm13)
+`define SUBCC 			6'b010100		//rd <=	rs1 - (rs2 or simm13), modify icc
+`define SUBX 			6'b001100		//rd <=	rs1 - (rs2 or simm13) - Carry
+`define SUBXCC 			6'b011100		//rd <=	rs1 - (rs2 or simm13) - Carry, modify icc
 
 //************************************
 //	Logical
 //	Instructions
 //************************************
 
-		AND = 6'b000001,
-		ANDCC = 6'b010001,
-		ANDN = 6'b000101,
-		ANDNCC = 6'b010101,	
-		OR = 6'b000010,		
-		ORCC = 6'b010010,
-		ORN = 6'b000110,
-		ORNCC = 6'b010110,
-                XOR = 6'b000011,
-                XORCC = 6'b010011,
-                XORN = 6'b000111,
-                XORNCC = 6'b010111,
+`define AND 			6'b000001		//rd <=	rs1 bitwise AND	(rs2 or	simm13)
+`define ANDCC 			6'b010001		//rd <=	rs1 bitwise AND	(rs2 or simm13), modify	icc
+`define ANDN 			6'b000101		//rd <=	rs1 bitwise AND	(NOT(rs2 or simm13))
+`define ANDNCC 			6'b010101		//rd <=	rs1 bitwise AND	(NOT(rs2 or simm13)), modify icc
+`define OR 			6'b000010		//rd <=	rs1 bitwise OR (rs2 or simm13)
+`define ORCC 			6'b010010		//rd <=	rs1 bitwise OR (rs2 or simm13),	modify icc
+`define ORN 			6'b000110		//rd <=	rs1 bitwise OR (NOT(rs2	or simm13))
+`define ORNCC 			6'b010110		//rd <=	rs1 bitwise OR (NOT(rs2	or simm13)),	modify	icc
+`define XOR 			6'b000011		//rd <=	rs1 bitwise XOR (rs2 or simm13)
+`define XORCC 			6'b010011		//rd <=	rs1 bitwise XOR	(rs2 or simm13), modify	icc
+`define XORN 			6'b000111		//rd <=	rs1 bitwise XNOR (rs2 or simm13)
+`define XORNCC 			6'b010111		//rd <=	rs1 bitwise XNOR (rs2 or simm13), modify icc
 
 //************************************
 //	Shift Instructions
 //************************************
 
-		SLL = 6'b100101,	
-		SRL = 6'b100110,	
-		SRA = 6'b100111,
+`define SLL 			6'b100101		//shift	left logical rs1 count positions
+`define SRL 			6'b100110		//shift	right logical rs1 count positions
+`define SRA 			6'b100111		//shift	right arithmetic rs1 count positions rd = MSB of rs1)
 
 //***********************************
 //	Load/Store
 //	Instructions
 //***********************************
 
-		LSB = 6'b001001,
-		LDSH = 6'b001010,
-		LD = 6'b001000,
-		LDUB = 6'b000001,
-		LDUH = 6'b000010,
-		LDD = 6'b000011,
-		STB = 6'b000101,
-		STH = 6'b000110,
-		ST = 6'b000100,
-		STD = 6'b000111;
+`define LSB 			6'b001001		//Load sign byte
+`define LDSH 			6'b001010		//Load sign halfword
+`define LD 			6'b001000		//Load word
+`define LDUB 			6'b000001		//Load unsigned	byte
+`define LDUH 			6'b000010		//Load unsigned	halfword
+`define LDD 			6'b000011		//Load double
+`define STB 			6'b000101		//Store	byte
+`define STH 			6'b000110		//Store	halfword
+`define ST 			6'b000100		//Store	word
+`define STD 			6'b000111		//Store	double
 
+
+module ALU(output reg [31:0] Out, output reg C, N, V, Z, input [31:0] A, B, input [5:0] OpCode, input Cin);
 always@(OpCode, A, B)
 begin
         case(OpCode)
@@ -72,12 +97,12 @@ begin
 //---Basic-Arithmetic-Instructions---
 //-----------------------------------
 
-        ADD:
+        `ADD:
         begin
                 Out = A + B;
         end
 
-        ADDCC:
+        `ADDCC:
         begin
                 Out = A + B;
                 N = Out[31];
@@ -98,12 +123,12 @@ begin
                         V = 1'b0;
 	end
 
-	ADDX:
+	`ADDX:
 	begin
 		Out = A + B + Cin;
 	end
 	
-	ADDXCC:
+	`ADDXCC:
 	begin
 		Out = A + B + Cin;
                 N = Out[31];
@@ -124,12 +149,12 @@ begin
                         V = 1'b0;
 	end
 
-	SUB:
+	`SUB:
 	begin
 		Out = A - B;
 	end
 
-	SUBCC:
+	`SUBCC:
 	begin
 		Out = A - B;
 		N = Out[31];
@@ -151,12 +176,12 @@ begin
 
 	end
 	
-	SUBX:
+	`SUBX:
 	begin
 		Out = A - B - Cin;
 	end
 
-	SUBXCC:
+	`SUBXCC:
 	begin
 		Out = A - B - Cin;
 		N = Out[31];
@@ -182,12 +207,12 @@ begin
 //---Logical-Instructions------
 //-----------------------------
 	
-	AND:
+	`AND:
 	begin
 		Out = A & B;
 	end
 
-	ANDCC:
+	`ANDCC:
 	begin
 		Out = A & B;
 		N = Out[31];
@@ -202,12 +227,12 @@ begin
 		
 	end
 	
-	ANDN:
+	`ANDN:
 	begin
 		Out = A & (~B);
 	end
 
-	ANDNCC:
+	`ANDNCC:
 	begin
 		Out = A & (~B);
 		N = Out[31];
@@ -222,12 +247,12 @@ begin
 		
 	end
 	
-	OR:
+	`OR:
 	begin
 		Out = A | B;
 	end
 
-	ORCC:
+	`ORCC:
 	begin
 		Out = A | B;
 		N = Out[31];
@@ -242,12 +267,12 @@ begin
               
 	end
 
-	ORN:
+	`ORN:
 	begin
 		Out = A | (~B); 
 	end
 
-	ORNCC:
+	`ORNCC:
 	begin
 		Out = A | (~B);
 		N = Out[31];
@@ -262,12 +287,12 @@ begin
                 
 	end
 
-	XOR:
+	`XOR:
 	begin
 		Out = A ^ B; 
 	end
 	
-	XORCC:
+	`XORCC:
 	begin
 		Out = A ^ B;
 		N = Out[31];
@@ -282,12 +307,12 @@ begin
                 
 	end
 
-	XORN:
+	`XORN:
 	begin
 		Out = A ^ (~B);
 	end
 
-	XORNCC:
+	`XORNCC:
 	begin
 		Out = A ^ (~B);
 		N = Out[31];
@@ -306,7 +331,7 @@ begin
 //---Shift-Instructions-----
 //--------------------------
 
-	SLL:
+	`SLL:
 	begin
 		Out = A << (B & 32'h0000001F);
                 N = Out[31];
@@ -320,7 +345,7 @@ begin
                 V = 0;  
 	end
 		
-	SRL:
+	`SRL:
 	begin
 		Out = A >> (B & 32'h0000001F);
                 N = Out[31];
@@ -334,7 +359,7 @@ begin
                 V = 0;  
 	end
 
-	SRA:
+	`SRA:
 	begin
 		Out = A >>> (B & 32'h0000001F);
                 N = Out[31];
@@ -356,32 +381,32 @@ begin
  * Load instructions produce an Effective
  * Address from the sum of its operands
  */
-	LSB:
+	`LSB:
 	begin
 		Out = A + B;		
 	end
 
-	LDSH:
+	`LDSH:
 	begin
 		Out = A + B;
 	end
 
-	LD:
+	`LD:
 	begin
 		Out = A + B;
 	end
 
-	LDUB:
+	`LDUB:
 	begin
 		Out = A + B;
 	end
 
-	LDUH:
+	`LDUH:
 	begin
 		Out = A + B;
 	end
 
-	LDD:
+	`LDD:
 	begin
 		Out = A + B;
 	end
@@ -390,25 +415,27 @@ begin
  * Store instructions produce an Effective
  * Address from the sum of its operands
  */
-	STB:
+	`STB:
 	begin
 		Out = A + B;
 	end
 
-	STH:
+	`STH:
 	begin
 		Out = A + B;
 	end
 	
-	ST:
+	`ST:
 	begin
 		Out = A + B;
 	end
 
-	STD:
+	`STD:
 	begin
 		Out = A + B;
 	end
+	
+	endcase
 
 end
 endmodule

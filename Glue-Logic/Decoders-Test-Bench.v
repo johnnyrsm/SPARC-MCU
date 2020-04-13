@@ -64,14 +64,8 @@ join
 
 initial begin
 
-	//$display("Ein2x4	Eout2x4	Ld2x4		  Time");
-	//$monitor("%b	%b	%b", Ein2x4, Eout2x4, Ld2x4, $time);
-
-	//$display("Ein5x32	Eout5x32	Ld5x32		Time");
-	//$monitor("%b	%h	%b", Ein5x32, Eout5x32, Ld5x32, $time);
-
-	$display("Ein5x32	Eout5x32	Ld5x32	Ein2x4	Eout2x4	Ld2x4		Time");
-	$monitor("%b 	%h	%b	%b	%b	%b", Ein5x32, Eout5x32, Ld5x32, Ein2x4, Eout2x4, Ld2x4, $time);
+	$display("Ein5x32\tEout5x32\tLd5x32\tEin2x4\tEout2x4\tLd2x4\t\tTime");
+	$monitor("%b\t%h\t%b\t%b\t%b\t%b", Ein5x32, Eout5x32, Ld5x32, Ein2x4, Eout2x4, Ld2x4, $time);
 
 end
 

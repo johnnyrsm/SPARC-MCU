@@ -61,8 +61,8 @@ join
 
 initial begin
 
-	$display("D	 Q		Clk	Clr	Le");
-	$monitor("%h %h	%b	%b	%b", D, Q, Clk, Clr, Le, $time);
+	$display("D       \tQ       \tClk\tClr\tLe\t\tTime");
+	$monitor("%h\t%h\t%b\t%b\t%b", D, Q, Clk, Clr, Le, $time);
 
 end
 
